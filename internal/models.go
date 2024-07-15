@@ -1,9 +1,10 @@
 package internal
 
-// Task represents a task in the todo list.
+import "time"
+
 type Task struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	ActiveAt string `json:"activeAt"`
-	Status   string `json:"status"`
+	ID       string    `json:"id"`
+	Title    string    `json:"title"`
+	ActiveAt time.Time `json:"activeAt"`
+	Done     bool      `json:"done"`
 }

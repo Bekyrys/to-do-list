@@ -30,11 +30,12 @@ func TasksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		task.ID = GenerateID()
 		if err := AddTask(task); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusConflict)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(task)
+		json.NewEncoder(w).Encode(map[string]string{"id": task.ID})
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}

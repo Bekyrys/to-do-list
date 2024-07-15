@@ -2,92 +2,78 @@ package internal
 
 import (
 	"errors"
-	"fmt"
 	"sync"
+	"time"
 )
 
-type InMemoryDB struct {
-	tasks map[string]Task
+var (
+	tasks = make(map[string]Task)
 	mu    sync.Mutex
-}
+)
 
-var db = InMemoryDB{
-	tasks: make(map[string]Task),
+func GetTasks(status string) []Task {
+	mu.Lock()
+	defer mu.Unlock()
+
+	var result []Task
+	for _, task := range tasks {
+		if status == "done" && task.Done {
+			result = append(result, task)
+		} else if status != "done" && !task.Done && task.ActiveAt.Before(time.Now()) {
+			result = append(result, task)
+		}
+	}
+	return result
 }
 
 func AddTask(task Task) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
 
-	key := fmt.Sprintf("%s-%s", task.Title, task.ActiveAt)
-	if _, exists := db.tasks[key]; exists {
-		return errors.New("task already exists")
+	for _, t := range tasks {
+		if t.Title == task.Title && t.ActiveAt == task.ActiveAt {
+			return errors.New("task already exists")
+		}
 	}
 
-	db.tasks[task.ID] = task
+	tasks[task.ID] = task
 	return nil
 }
 
 func UpdateTask(task Task) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
 
-	if _, exists := db.tasks[task.ID]; !exists {
+	if _, exists := tasks[task.ID]; !exists {
 		return errors.New("task not found")
 	}
 
-	db.tasks[task.ID] = task
+	tasks[task.ID] = task
 	return nil
 }
 
 func DeleteTask(id string) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
 
-	if _, exists := db.tasks[id]; !exists {
+	if _, exists := tasks[id]; !exists {
 		return errors.New("task not found")
 	}
 
-	delete(db.tasks, id)
+	delete(tasks, id)
 	return nil
 }
 
 func MarkTaskAsDone(id string) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
 
-	task, exists := db.tasks[id]
+	task, exists := tasks[id]
 	if !exists {
 		return errors.New("task not found")
 	}
 
-	task.Status = "done"
-	db.tasks[id] = task
+	task.Done = true
+	tasks[id] = task
 	return nil
-}
-
-func GetTasks(status string) []Task {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	var tasks []Task
-	for _, task := range db.tasks {
-		if status == "" || task.Status == status {
-			tasks = append(tasks, task)
-		}
-	}
-
-	return tasks
-}
-
-func GetTaskByID(id string) (Task, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	task, exists := db.tasks[id]
-	if !exists {
-		return Task{}, errors.New("task not found")
-	}
-
-	return task, nil
 }
