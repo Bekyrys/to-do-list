@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"errors"
+	"github.com/google/uuid"
 	"sync"
 	"time"
 )
@@ -109,8 +110,7 @@ func MarkTaskDone(id string) error {
 }
 
 func generateID() string {
-	// Generate a unique ID for the task
-	return "someUniqueID"
+	return uuid.New().String()
 }
 
 func isWeekend(t time.Time) bool {
