@@ -40,7 +40,7 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	task, err := tasks.CreateTask(t.Title, activeAt)
 	if err != nil {
 		if err.Error() == "task already exists" {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, "task already exists", http.StatusConflict)
 		} else {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
@@ -48,7 +48,7 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(task)
+	json.NewEncoder(w).Encode(map[string]string{"id": task.ID})
 }
 
 func getTasksHandler(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +83,7 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = tasks.UpdateTask(id, t.Title, activeAt)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, "task not found", http.StatusNotFound)
 		return
 	}
 
@@ -96,7 +96,7 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tasks.DeleteTask(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, "task not found", http.StatusNotFound)
 		return
 	}
 
@@ -109,7 +109,7 @@ func markTaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tasks.MarkTaskDone(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		http.Error(w, "task not found", http.StatusNotFound)
 		return
 	}
 
