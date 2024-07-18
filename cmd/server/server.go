@@ -40,13 +40,20 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response := struct {
+		ID        string `json:"id"`
+		Title     string `json:"title"`
+		ActiveAt  string `json:"activeAt"`
+		Completed bool   `json:"completed"`
+	}{
+		ID:        task.ID,
+		Title:     task.Title,
+		ActiveAt:  task.ActiveAt.Format("02 Jan 06 15:04 -0700"),
+		Completed: task.Done,
+	}
+
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":        task.ID,
-		"title":     task.Title,
-		"activeAt":  task.ActiveAt.Format("02 Jan 06 15:04 -0700"),
-		"completed": task.Done,
-	})
+	json.NewEncoder(w).Encode(response)
 }
 
 func getTasksHandler(w http.ResponseWriter, r *http.Request) {
