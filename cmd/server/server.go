@@ -80,7 +80,7 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	activeAt, err := time.Parse("02 Jan 06 15:04 -0700", t.ActiveAt)
+	activeAt, err := time.Parse("02 Jan 06 15:04", t.ActiveAt)
 	if err != nil {
 		http.Error(w, "invalid date format", http.StatusBadRequest)
 		return
@@ -101,7 +101,7 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}{
 		ID:        updatedTask.ID,
 		Title:     updatedTask.Title,
-		ActiveAt:  updatedTask.ActiveAt.Format("02 Jan 06 15:04 -0700"),
+		ActiveAt:  updatedTask.ActiveAt.Format("02 Jan 06 15:04"),
 		Completed: updatedTask.Done,
 	}
 
