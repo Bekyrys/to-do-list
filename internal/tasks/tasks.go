@@ -17,7 +17,7 @@ type Task struct {
 var tasks = []Task{}
 var mu sync.Mutex
 
-func CreateTask(title string, activeAt time.Time) (Task, error) {
+func CreateTask(title string) (Task, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -25,11 +25,7 @@ func CreateTask(title string, activeAt time.Time) (Task, error) {
 		return Task{}, errors.New("title too long")
 	}
 
-	for _, task := range tasks {
-		if task.Title == title && task.ActiveAt.Equal(activeAt) {
-			return Task{}, errors.New("task already exists")
-		}
-	}
+	activeAt := time.Now()
 
 	newTask := Task{
 		ID:       generateID(),

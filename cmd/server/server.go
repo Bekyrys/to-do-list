@@ -23,21 +23,14 @@ func main() {
 
 func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var t struct {
-		Title    string `json:"title"`
-		ActiveAt string `json:"activeAt"`
+		Title string `json:"title"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	activeAt, err := time.Parse("2006-01-02", t.ActiveAt)
-	if err != nil {
-		http.Error(w, "invalid date format", http.StatusBadRequest)
-		return
-	}
-
-	task, err := tasks.CreateTask(t.Title, activeAt)
+	task, err := tasks.CreateTask(t.Title)
 	if err != nil {
 		if err.Error() == "task already exists" {
 			http.Error(w, "task already exists", http.StatusConflict)
@@ -48,7 +41,12 @@ func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"id": task.ID})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":        task.ID,
+		"title":     task.Title,
+		"activeAt":  task.ActiveAt.Format("02 Jan 06 15:04 -0700"),
+		"completed": task.Done,
+	})
 }
 
 func getTasksHandler(w http.ResponseWriter, r *http.Request) {
