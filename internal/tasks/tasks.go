@@ -58,6 +58,19 @@ func GetTasks(status string) []Task {
 	return filteredTasks
 }
 
+func GetTaskByID(id string) (Task, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	for _, task := range tasks {
+		if task.ID == id {
+			return task, nil
+		}
+	}
+
+	return Task{}, errors.New("task not found")
+}
+
 func UpdateTask(id string, title string, activeAt time.Time) error {
 	mu.Lock()
 	defer mu.Unlock()
