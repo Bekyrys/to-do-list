@@ -23,33 +23,32 @@ func main() {
 
 func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var t struct {
-		Title string `json:"title"`
+		Title    string `json:"title"`
+		ActiveAt string `json:"activeAt"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	task, err := tasks.CreateTask(t.Title)
+	activeAt, err := time.Parse("02 January 15:04", t.ActiveAt)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "invalid date format", http.StatusBadRequest)
 		return
 	}
 
-	response := struct {
-		ID        string `json:"id"`
-		Title     string `json:"title"`
-		ActiveAt  string `json:"activeAt"`
-		Completed bool   `json:"completed"`
-	}{
-		ID:        task.ID,
-		Title:     task.Title,
-		ActiveAt:  task.ActiveAt.Format("02 January 15:04"),
-		Completed: task.Done,
+	task, err := tasks.CreateTask(t.Title, activeAt)
+	if err != nil {
+		if err.Error() == "task already exists" {
+			http.Error(w, "task already exists", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(map[string]string{"id": task.ID})
 }
 
 func getTasksHandler(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +83,7 @@ func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = tasks.UpdateTask(id, t.Title, activeAt)
 	if err != nil {
-		http.Error(w, "task not found", http.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -111,18 +110,11 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tasks.DeleteTask(id)
 	if err != nil {
-		http.Error(w, "task not found", http.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	response := struct {
-		Message string `json:"message"`
-	}{
-		Message: "Task deleted",
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func markTaskDoneHandler(w http.ResponseWriter, r *http.Request) {
@@ -131,23 +123,9 @@ func markTaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := tasks.MarkTaskDone(id)
 	if err != nil {
-		http.Error(w, "task not found", http.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	updatedTask, _ := tasks.GetTaskByID(id)
-	response := struct {
-		ID        string `json:"id"`
-		Title     string `json:"title"`
-		ActiveAt  string `json:"activeAt"`
-		Completed bool   `json:"completed"`
-	}{
-		ID:        updatedTask.ID,
-		Title:     updatedTask.Title,
-		ActiveAt:  updatedTask.ActiveAt.Format("02 January 15:04"),
-		Completed: updatedTask.Done,
-	}
-
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusNoContent)
 }
