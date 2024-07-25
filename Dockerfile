@@ -1,16 +1,29 @@
-FROM golang:1.19-alpine
+# Используйте официальный образ Golang в качестве базового образа
+FROM golang:1.20-alpine
 
+# Установите обновления и зависимости
+RUN apk update && apk add --no-cache git
+
+# Создайте рабочую директорию внутри контейнера
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
-RUN go mod download
+# Скопируйте go.mod и go.sum в рабочую директорию
+COPY go.mod go.sum ./
 
-COPY *.go ./
-COPY internal/ ./internal
+# Загрузите зависимости
+RUN go mod tidy
 
-RUN go build -o /todo-list
+# Скопируйте весь код проекта в рабочую директорию
+COPY . .
 
-EXPOSE 8000
+# Установите рабочую директорию для сборки проекта
+WORKDIR /app/cmd/server
 
-CMD [ "/todo-list" ]
+# Скомпилируйте Go-приложение
+RUN go build -o /app/main .
+
+# Установите порт, который будет слушать приложение
+EXPOSE 8080
+
+# Определите команду для запуска приложения
+CMD ["/app/main"]

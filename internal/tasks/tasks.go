@@ -17,7 +17,7 @@ type Task struct {
 var tasks = []Task{}
 var mu sync.Mutex
 
-func CreateTask(title string, activeAt time.Time) (Task, error) {
+func CreateTask(title string) (Task, error) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -25,16 +25,10 @@ func CreateTask(title string, activeAt time.Time) (Task, error) {
 		return Task{}, errors.New("title too long")
 	}
 
-	for _, task := range tasks {
-		if task.Title == title && task.ActiveAt.Equal(activeAt) {
-			return Task{}, errors.New("task already exists")
-		}
-	}
-
 	newTask := Task{
 		ID:       generateID(),
 		Title:    title,
-		ActiveAt: activeAt,
+		ActiveAt: time.Now(),
 		Done:     false,
 	}
 	tasks = append(tasks, newTask)
@@ -60,6 +54,18 @@ func GetTasks(status string) []Task {
 	}
 
 	return filteredTasks
+}
+
+func GetTaskByID(id string) (Task, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	for _, task := range tasks {
+		if task.ID == id {
+			return task, nil
+		}
+	}
+	return Task{}, errors.New("task not found")
 }
 
 func UpdateTask(id string, title string, activeAt time.Time) error {
@@ -107,19 +113,6 @@ func MarkTaskDone(id string) error {
 	}
 
 	return errors.New("task not found")
-}
-
-func GetTaskByID(id string) (Task, error) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	for _, task := range tasks {
-		if task.ID == id {
-			return task, nil
-		}
-	}
-
-	return Task{}, errors.New("task not found")
 }
 
 func generateID() string {

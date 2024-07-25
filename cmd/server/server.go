@@ -23,32 +23,33 @@ func main() {
 
 func createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var t struct {
-		Title    string `json:"title"`
-		ActiveAt string `json:"activeAt"`
+		Title string `json:"title"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	activeAt, err := time.Parse("02 January 15:04", t.ActiveAt)
+	task, err := tasks.CreateTask(t.Title)
 	if err != nil {
-		http.Error(w, "invalid date format", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	task, err := tasks.CreateTask(t.Title, activeAt)
-	if err != nil {
-		if err.Error() == "task already exists" {
-			http.Error(w, "task already exists", http.StatusNotFound)
-		} else {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-		return
+	response := struct {
+		ID        string `json:"id"`
+		Title     string `json:"title"`
+		ActiveAt  string `json:"activeAt"`
+		Completed bool   `json:"completed"`
+	}{
+		ID:        task.ID,
+		Title:     task.Title,
+		ActiveAt:  task.ActiveAt.Format("02 January 15:04"),
+		Completed: task.Done,
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"id": task.ID})
+	json.NewEncoder(w).Encode(response)
 }
 
 func getTasksHandler(w http.ResponseWriter, r *http.Request) {
@@ -114,7 +115,8 @@ func deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Task deleted"})
 }
 
 func markTaskDoneHandler(w http.ResponseWriter, r *http.Request) {
@@ -127,5 +129,19 @@ func markTaskDoneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	doneTask, _ := tasks.GetTaskByID(id)
+	response := struct {
+		ID        string `json:"id"`
+		Title     string `json:"title"`
+		ActiveAt  string `json:"activeAt"`
+		Completed bool   `json:"completed"`
+	}{
+		ID:        doneTask.ID,
+		Title:     doneTask.Title,
+		ActiveAt:  doneTask.ActiveAt.Format("02 January 15:04"),
+		Completed: doneTask.Done,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 }
