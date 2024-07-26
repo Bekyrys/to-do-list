@@ -1,4 +1,5 @@
-module server.go
+module github.com/Bekyrys/todo-list
+
 go 1.20
 
 require (
