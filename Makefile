@@ -1,7 +1,7 @@
 .PHONY: build run
 
 build:
-    docker-compose build
+	go build -tags netgo -ldflags '-s -w' -o app ./cmd/server
 
 run:
-    docker-compose up
+	docker-compose up
